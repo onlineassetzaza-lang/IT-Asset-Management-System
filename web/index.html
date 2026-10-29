@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IT Asset Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Loading skeleton while the session is restored -->
+  <div id="boot" class="boot" aria-busy="true" aria-label="กำลังโหลด">
+    <div class="skeleton sk-side"></div>
+    <div class="boot-main">
+      <div class="skeleton sk-title"></div>
+      <div class="cards"><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div></div>
+      <div class="skeleton sk-table"></div>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <section id="login" class="login hidden">
+    <form id="form-login" class="login-box" novalidate>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">◆</span><span>IT Asset Management</span></div>
+      <p class="muted">เข้าสู่ระบบเพื่อจัดการทะเบียนอุปกรณ์</p>
+      <label class="field"><span class="field-label">ชื่อผู้ใช้</span><input id="l-user" autocomplete="username"></label>
+      <label class="field"><span class="field-label">รหัสผ่าน</span><input id="l-pass" type="password" autocomplete="current-password"></label>
+      <p id="login-error" class="error" role="alert"></p>
+      <button type="submit" class="btn primary block">เข้าสู่ระบบ</button>
+    </form>
+  </section>
+
+  <div id="app" class="shell hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-brand">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">◆</span><span class="brand-name">IT Asset</span></div>
+        <small class="tagline">IT ASSET MANAGEMENT</small>
+      </div>
+      <nav id="nav" class="side-nav" aria-label="เมนูหลัก">
+        <p class="nav-section">เมนูหลัก</p>
+        <button class="nav-item" data-view="overview"><span class="ico" aria-hidden="true">▦</span>ภาพรวม</button>
+        <button class="nav-item" data-view="assets"><span class="ico" aria-hidden="true">▣</span>อุปกรณ์</button>
+        <button class="nav-item" data-view="movements"><span class="ico" aria-hidden="true">⇄</span>เบิก–คืนอุปกรณ์</button>
+        <button class="nav-item" data-view="maintenance"><span class="ico" aria-hidden="true">⚒</span>งานซ่อมบำรุง</button>
+        <button class="nav-item soon" disabled title="อยู่ระหว่างพัฒนา"><span class="ico" aria-hidden="true">▤</span>รายงานและวิเคราะห์<em>เร็วๆ นี้</em></button>
+        <p class="nav-section">ดูแลระบบ</p>
+        <button class="nav-item" data-view="users" data-perm="user.manage"><span class="ico" aria-hidden="true">◉</span>ผู้ใช้และสิทธิ์</button>
+        <button class="nav-item" data-view="master"><span class="ico" aria-hidden="true">⚙</span>ตั้งค่าระบบ</button>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <nav class="crumbs" aria-label="ตำแหน่งปัจจุบัน"><span>IT Asset Management</span><span class="sep">/</span><strong id="crumb-page">ภาพรวม</strong></nav>
+        <div class="userbox">
+          <span class="user-text"><strong id="user-name"></strong><small id="user-role"></small></span>
+          <span id="user-avatar" class="avatar" aria-hidden="true"></span>
+          <button id="btn-password" class="btn ghost sm" title="เปลี่ยนรหัสผ่าน" aria-label="เปลี่ยนรหัสผ่าน">🔑</button>
+          <button id="btn-logout" class="btn ghost sm">ออกจากระบบ</button>
+        </div>
+      </header>
+
+      <main class="container">
+        <!-- ===== ภาพรวม ===== -->
+        <div id="view-overview" class="view">
+          <div class="page-head">
+            <div><p class="eyebrow">WORKSPACE</p><h1>ภาพรวม</h1><p class="muted">สถานะทรัพย์สินไอทีของคุณวันนี้</p></div>
+            <button class="btn primary" data-export>↓ ส่งออกรายงาน</button>
+          </div>
+
+          <section class="cards" aria-label="สรุปจำนวนอุปกรณ์">
+            <div class="card"><span class="label">ทรัพย์สินทั้งหมด</span><strong id="c-total">0</strong><small id="s-total" class="muted"></small></div>
+            <div class="card available"><span class="label">พร้อมใช้งาน</span><strong id="c-available">0</strong><small id="s-available" class="muted"></small></div>
+            <div class="card inuse"><span class="label">กำลังใช้งาน</span><strong id="c-inuse">0</strong><small id="s-inuse" class="muted"></small></div>
+            <div class="card maintenance"><span class="label">ซ่อมบำรุง</span><strong id="c-maintenance">0</strong><small id="s-maintenance" class="muted"></small></div>
+          </section>
+
+          <div class="grid-main">
+            <section class="panel">
+              <h2>ภาพรวมการเปลี่ยนแปลง</h2>
+              <p class="muted sub">การเพิ่มและหมุนเวียนอุปกรณ์ 6 เดือนล่าสุด</p>
+              <div id="bars" class="bars" role="img" aria-label="กราฟแท่งการเคลื่อนไหวของอุปกรณ์รายเดือน"></div>
+            </section>
+            <section class="panel">
+              <h2>สัดส่วนตามหมวดหมู่</h2>
+              <ul id="shares" class="shares"></ul>
+            </section>
+            <section class="panel">
+              <h2>รายการล่าสุด</h2>
+              <ul id="recent" class="feed"></ul>
+            </section>
+            <section class="panel">
+              <h2>สิ่งที่ต้องติดตาม</h2>
+              <ul id="attention" class="feed"></ul>
+            </section>
+          </div>
+        </div>
+
+        <!-- ===== อุปกรณ์ ===== -->
+        <div id="view-assets" class="view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">ทะเบียน</p><h1>อุปกรณ์</h1><p class="muted">ค้นหา จ่าย รับคืน และจัดการทะเบียนอุปกรณ์</p></div>
+            <div class="head-actions">
+              <button class="btn" data-export>↓ ส่งออก CSV</button>
+              <button id="btn-add" class="btn primary" data-perm="asset.create">+ เพิ่มอุปกรณ์</button>
+            </div>
+          </div>
+
+          <section class="panel">
+            <div class="filters">
+              <input id="search" type="search" placeholder="ค้นหารหัสหรือชื่ออุปกรณ์..." aria-label="ค้นหาอุปกรณ์">
+              <select id="filter-category" aria-label="กรองตามหมวดหมู่"></select>
+            </div>
+            <div id="status-tabs" class="tabs" role="tablist" aria-label="กรองตามสถานะ">
+              <button class="tab active" data-status="">ทั้งหมด</button>
+              <button class="tab" data-status="Available">พร้อมใช้</button>
+              <button class="tab" data-status="In Use">กำลังใช้</button>
+              <button class="tab" data-status="Maintenance">ซ่อม</button>
+              <button class="tab" data-status="Retired">เลิกใช้</button>
+            </div>
+
+            <p id="result-count" class="muted result-count" aria-live="polite"></p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Asset ID</th><th>ชื่ออุปกรณ์</th><th>หมวดหมู่</th><th>ผู้ถือครอง</th><th>สถานะ</th><th class="col-actions">การทำงาน</th></tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+            <div id="empty-state" class="empty-state hidden">
+              <p id="empty-text"></p>
+              <div class="actions center">
+                <button id="empty-clear" class="btn">ล้างตัวกรอง</button>
+                <button id="empty-add" class="btn primary" data-perm="asset.create">+ เพิ่มอุปกรณ์</button>
+              </div>
+            </div>
+            <div id="pagination" class="pagination"></div>
+          </section>
+        </div>
+
+        <!-- ===== เบิก–คืนอุปกรณ์ ===== -->
+        <div id="view-movements" class="view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">ธุรกรรม</p><h1>เบิก–คืนอุปกรณ์</h1><p class="muted">ประวัติการจ่ายและรับคืน (จ่าย/รับคืนทำได้จากหน้า "อุปกรณ์")</p></div>
+            <button class="btn" data-goto="assets">ไปหน้าอุปกรณ์</button>
+          </div>
+          <section class="panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>เวลา</th><th>Asset ID</th><th>ชื่ออุปกรณ์</th><th>รายการ</th></tr></thead>
+                <tbody id="movement-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===== งานซ่อมบำรุง ===== -->
+        <div id="view-maintenance" class="view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">ซ่อมบำรุง</p><h1>งานซ่อมบำรุง</h1><p class="muted">อุปกรณ์ที่อยู่ระหว่างซ่อม — ปิดงานเมื่อซ่อมเสร็จหรือเลิกใช้</p></div>
+          </div>
+          <section class="panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Asset ID</th><th>ชื่ออุปกรณ์</th><th>อาการ</th><th>ผู้ให้บริการ</th><th>เริ่มเมื่อ</th><th class="col-actions">การทำงาน</th></tr></thead>
+                <tbody id="maint-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- ===== ตั้งค่าระบบ (ข้อมูลหลัก) ===== -->
+        <div id="view-master" class="view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">ตั้งค่า</p><h1>ตั้งค่าระบบ</h1><p class="muted">หมวดหมู่อุปกรณ์และรายชื่อพนักงานผู้รับอุปกรณ์</p></div>
+          </div>
+          <div id="master-tabs" class="tabs" role="tablist">
+            <button class="tab active" data-sub="categories">หมวดหมู่</button>
+            <button class="tab" data-sub="employees">พนักงาน</button>
+          </div>
+
+          <section id="sub-categories" class="panel">
+            <div class="panel-head">
+              <h2>หมวดหมู่อุปกรณ์</h2>
+              <button id="btn-add-category" class="btn primary sm" data-perm="master.manage">+ เพิ่มหมวดหมู่</button>
+            </div>
+            <ul id="category-list" class="item-list"></ul>
+          </section>
+
+          <section id="sub-employees" class="panel hidden">
+            <div class="panel-head">
+              <h2>พนักงาน</h2>
+              <button id="btn-add-employee" class="btn primary sm" data-perm="master.manage">+ เพิ่มพนักงาน</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ชื่อ-สกุล</th><th>แผนก</th><th class="col-actions">การทำงาน</th></tr></thead>
+                <tbody id="emp-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <!-- ===== ผู้ใช้และสิทธิ์ ===== -->
+        <div id="view-users" class="view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">ดูแลระบบ</p><h1>ผู้ใช้และสิทธิ์</h1><p class="muted">จัดการบัญชีผู้ใช้และบทบาทการเข้าถึงระบบ</p></div>
+            <button id="btn-add-user" class="btn primary">+ เพิ่มผู้ใช้</button>
+          </div>
+          <section class="panel">
+            <div class="panel-head"><div><h2>บัญชีผู้ใช้</h2><p class="muted">การเปลี่ยน Role หรือปิดบัญชีต้องยืนยันรหัสผ่านผู้ดูแล</p></div><button id="btn-refresh-users" class="btn sm">↻ รีเฟรช</button></div>
+            <div class="table-wrap"><table><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อที่แสดง</th><th>Role</th><th>สถานะ</th><th class="col-actions">การทำงาน</th></tr></thead><tbody id="users-body"></tbody></table></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>สิทธิ์ตามบทบาท</h2><p class="muted">สิทธิ์ถูกกำหนดตาม Role โดยระบบ</p></div></div>
+            <div class="table-wrap"><table class="role-matrix"><thead><tr><th>สิทธิ์</th><th>Admin</th><th>IT Staff</th><th>Auditor</th></tr></thead><tbody>
+              <tr><td>ดูภาพรวมและอุปกรณ์</td><td>✓</td><td>✓</td><td>✓</td></tr>
+              <tr><td>เพิ่ม/แก้ไข/จ่าย–รับคืน/ซ่อมอุปกรณ์</td><td>✓</td><td>✓</td><td>—</td></tr>
+              <tr><td>จัดการพนักงาน</td><td>✓</td><td>✓</td><td>—</td></tr>
+              <tr><td>จัดการหมวดหมู่และสถานที่</td><td>✓</td><td>—</td><td>—</td></tr>
+              <tr><td>จัดการผู้ใช้และบทบาท</td><td>✓</td><td>—</td><td>—</td></tr>
+              <tr><td>ดู Audit Log</td><td>✓</td><td>—</td><td>✓</td></tr>
+            </tbody></table></div>
+            <p class="notice">สิทธิ์มีผลที่ API ด้วย ตารางนี้เป็นข้อมูลอ้างอิงและการกำหนด Role ไม่สามารถเพิ่มสิทธิ์เฉพาะรายได้</p>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Asset detail drawer -->
+  <div id="drawer" class="drawer hidden">
+    <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <header class="drawer-head">
+        <h3 id="drawer-title"></h3>
+        <button type="button" class="btn ghost sm" data-close aria-label="ปิด">✕</button>
+      </header>
+      <div id="drawer-body" class="drawer-body"></div>
+    </aside>
+  </div>
+
+  <!-- Add / Edit asset -->
+  <div id="modal-asset" class="modal hidden">
+    <form class="modal-box" id="form-asset" role="dialog" aria-modal="true" aria-labelledby="asset-title" novalidate>
+      <h3 id="asset-title">เพิ่มอุปกรณ์ใหม่</h3>
+      <label class="field"><span class="field-label">รหัสอุปกรณ์ <b class="req">*</b></span>
+        <input id="f-id" placeholder="เช่น IT-011"><small id="err-id" class="field-error"></small></label>
+      <label class="field"><span class="field-label">ชื่ออุปกรณ์ <b class="req">*</b></span>
+        <input id="f-name" placeholder="เช่น MacBook Pro 14"></label>
+      <label class="field"><span class="field-label">หมวดหมู่</span><select id="f-category"></select></label>
+      <label class="field"><span class="field-label">วันที่ซื้อ</span><input id="f-date" type="date"></label>
+      <p id="asset-error" class="error" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="btn" data-close>ยกเลิก</button>
+        <button type="submit" id="btn-save" class="btn primary" disabled>บันทึก</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Generic form: check-out, check-in, retire, maintenance, master data, password -->
+  <div id="modal-form" class="modal hidden">
+    <form class="modal-box" id="form-generic" role="dialog" aria-modal="true" aria-labelledby="gf-title" novalidate>
+      <h3 id="gf-title"></h3>
+      <div id="gf-fields" class="fields"></div>
+      <p id="gf-error" class="error" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="btn" data-close>ยกเลิก</button>
+        <button type="submit" id="gf-submit" class="btn primary">บันทึก</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Generic confirm -->
+  <div id="modal-confirm" class="modal hidden">
+    <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h3 id="confirm-title">ยืนยันการทำรายการ</h3>
+      <p id="confirm-msg"></p>
+      <div class="actions">
+        <button type="button" class="btn" data-close>ยกเลิก</button>
+        <button type="button" id="btn-confirm" class="btn danger">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script src="js/store.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/master.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/view.js"></script>
+  <script src="js/controller.js"></script>
+</body>
+</html>
+
+
